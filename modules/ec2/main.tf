@@ -1,3 +1,6 @@
+terraform {
+  backend "s3" {}
+}
 resource "aws_iam_role" "ec2_cloudwatch_ssm" {
   name = "ec2-cloudwatch-ssm-role"
   assume_role_policy = <<EOF
