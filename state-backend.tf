@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "terragrunt_state" {
-  bucket = "my-terragrunt-state-bucket"
+  bucket = "bucket101439840"
 
   tags = {
     Name        = "Terragrunt State Bucket"

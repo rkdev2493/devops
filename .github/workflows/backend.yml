@@ -22,7 +22,20 @@ jobs:
         with:
           terraform_version: 1.6.6
 
+      - name: Check S3 bucket and DynamoDB table existence
+        id: check_backend
+        run: |
+          set -e
+          BUCKET_EXISTS=$(aws s3api head-bucket --bucket bucket101439840 2>/dev/null && echo "yes" || echo "no")
+          TABLE_EXISTS=$(aws dynamodb describe-table --table-name my-lock-table 2>/dev/null && echo "yes" || echo "no")
+          if [ "$BUCKET_EXISTS" = "yes" ] && [ "$TABLE_EXISTS" = "yes" ]; then
+            echo "skip_apply=true" >> $GITHUB_ENV
+          else
+            echo "skip_apply=false" >> $GITHUB_ENV
+          fi
+
       - name: Terraform Init & Apply (state-backend.tf only)
+        if: env.skip_apply == 'false'
         run: |
           terraform init
           terraform plan -out=tfplan -input=false
