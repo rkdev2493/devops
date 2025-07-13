@@ -1,0 +1,75 @@
+name: Destroy Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy (dev/prod)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+        default: 'dev'
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    # Prevent destroy in production without approval
+    concurrency: 
+      group: destroy-${{ github.event.inputs.environment }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AWS_REGION: us-east-1  # Change this to your AWS region
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Install Terragrunt
+        run: |
+          TERRAGRUNT_VERSION=v0.48.0
+          wget -q -O /tmp/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/${TERRAGRUNT_VERSION}/terragrunt_linux_amd64"
+          sudo mv /tmp/terragrunt /usr/local/bin/terragrunt
+          sudo chmod +x /usr/local/bin/terragrunt
+
+      - name: Destroy Environment
+        working-directory: live/${{ github.event.inputs.environment }}
+        run: |
+          echo "⚠️ About to destroy resources in ${{ github.event.inputs.environment }} environment"
+          echo "Waiting for 10 seconds before proceeding..."
+          sleep 10
+          terragrunt init
+          terragrunt destroy -auto-approve
+        env:
+          TF_WORKSPACE: ${{ github.event.inputs.environment }}
+
+      - name: Notify on Failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `${process.env.GITHUB_EVENT_INPUT_ENVIRONMENT} Environment Destroy Failed`,
+              body: `The destroy workflow for ${process.env.GITHUB_EVENT_INPUT_ENVIRONMENT} environment failed. Please check the workflow logs.`
+            })
