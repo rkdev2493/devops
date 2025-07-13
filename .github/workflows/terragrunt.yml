@@ -54,14 +54,26 @@ jobs:
           cd live/${{ github.event.inputs.environment }}
           terragrunt init
 
-      - name: Import IAM Instance Profile if not in state
+      - name: Auto-import existing AWS resources if missing from state
         run: |
           cd live/${{ github.event.inputs.environment }}
+
+          # IAM Role
+          if ! terragrunt state list | grep -q "aws_iam_role.ec2_cloudwatch_ssm"; then
+            echo "Importing IAM Role ec2_cloudwatch_ssm..."
+            terragrunt import aws_iam_role.ec2_cloudwatch_ssm ec2-cloudwatch-ssm-role-default
+          fi
+
+          # IAM Instance Profile
           if ! terragrunt state list | grep -q "aws_iam_instance_profile.ec2_profile"; then
-            echo "Importing existing IAM Instance Profile..."
+            echo "Importing IAM Instance Profile..."
             terragrunt import aws_iam_instance_profile.ec2_profile ec2-cloudwatch-ssm-profile
-          else
-            echo "IAM Instance Profile already in state. Skipping import."
+          fi
+
+          # Security Group
+          if ! terragrunt state list | grep -q "aws_security_group.ec2_sg"; then
+            echo "Importing Security Group ec2_sg..."
+            terragrunt import aws_security_group.ec2_sg sg-0ff24488acc056a68
           fi
 
       - name: Terragrunt Plan/Apply
