@@ -1,5 +1,5 @@
 resource "aws_iam_role" "ec2_cloudwatch_ssm" {
-  name = "ec2-cloudwatch-ssm-role"
+  name = "ec2-cloudwatch-ssm-role-${terraform.workspace}"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",

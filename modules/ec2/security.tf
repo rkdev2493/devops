@@ -1,5 +1,5 @@
 resource "aws_security_group" "ec2_sg" {
-  name        = "ec2-cloudwatch-sg"
+  name        = "ec2-cloudwatch-sg-${terraform.workspace}"
   description = "Allow SSH and CloudWatch Agent traffic"
   vpc_id      = var.vpc_id
 
