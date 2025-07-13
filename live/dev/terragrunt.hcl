@@ -16,16 +16,6 @@ inputs = {
   ]
 }
 
-remote_state {
-  backend = "s3"
-  config = {
-    bucket         = "bucket101439840"  # Matches your S3 bucket name
-    key            = "dev/ec2/terraform.tfstate"   # Customize path per module/environment
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "my-lock-table"               # Matches your DynamoDB table name
-  }
-}
 
 include {
   path = find_in_parent_folders()
