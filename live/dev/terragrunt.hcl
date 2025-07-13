@@ -19,7 +19,7 @@ inputs = {
 remote_state {
   backend = "s3"
   config = {
-    bucket         = "my-terragrunt-state-bucket"  # Matches your S3 bucket name
+    bucket         = "bucket101439840"  # Matches your S3 bucket name
     key            = "dev/ec2/terraform.tfstate"   # Customize path per module/environment
     region         = "us-east-1"
     encrypt        = true
