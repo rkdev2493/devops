@@ -36,8 +36,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -57,8 +58,28 @@ jobs:
           echo "⚠️ About to destroy resources in ${{ github.event.inputs.environment }} environment"
           echo "Waiting for 10 seconds before proceeding..."
           sleep 10
+          
+          # Check AWS credentials
+          echo "Verifying AWS credentials..."
+          aws sts get-caller-identity
+          
+          # Initialize and validate terragrunt
+          echo "Initializing Terragrunt..."
           terragrunt init
-          terragrunt destroy -auto-approve
+          
+          echo "Running terragrunt plan for validation..."
+          terragrunt plan -destroy || {
+            echo "❌ Terragrunt plan failed. Check the configuration and AWS credentials"
+            exit 1
+          }
+          
+          echo "Starting destroy operation..."
+          terragrunt destroy -auto-approve || {
+            echo "❌ Destroy operation failed"
+            exit 1
+          }
+          
+          echo "✅ Destroy operation completed successfully"
         env:
           TF_WORKSPACE: ${{ github.event.inputs.environment }}
 
@@ -67,9 +88,20 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const workflow_url = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `${process.env.GITHUB_EVENT_INPUT_ENVIRONMENT} Environment Destroy Failed`,
-              body: `The destroy workflow for ${process.env.GITHUB_EVENT_INPUT_ENVIRONMENT} environment failed. Please check the workflow logs.`
+              body: `
+                ## Destroy Operation Failed
+                - **Environment:** ${process.env.GITHUB_EVENT_INPUT_ENVIRONMENT}
+                - **Triggered by:** ${context.actor}
+                - **Workflow Run:** [View Logs](${workflow_url})
+                
+                Please check the workflow logs for detailed error information and ensure:
+                1. AWS credentials are correctly configured
+                2. IAM permissions are sufficient
+                3. All required variables are set
+              `
             })
