@@ -51,7 +51,7 @@ jobs:
         run: |
           cd live/${{ github.event.inputs.environment }}
           if [ "${{ github.event.inputs.action }}" = "plan" ]; then
-            terragrunt plan
+            terragrunt plan --terragrunt-non-interactive
           else
-            terragrunt apply -auto-approve
+            terragrunt apply -auto-approve --terragrunt-non-interactive
           fi
