@@ -2,7 +2,7 @@ resource "aws_ssm_association" "cloudwatch_agent" {
   name = "AmazonCloudWatch-ManageAgent"
   targets {
     key    = "InstanceIds"
-    values = [var.instance_id]
+    values = [aws_instance.ec2.id]
   }
   parameters = {
     action = ["Install"]
