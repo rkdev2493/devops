@@ -13,4 +13,4 @@ This project uses Terragrunt to manage Terraform modules for provisioning EC2 in
 2. Run Terragrunt in the desired environment folder:
    ```
    terragrunt apply
-   ```
+   ```..
