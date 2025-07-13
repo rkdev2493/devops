@@ -15,8 +15,3 @@ inputs = {
     "subnet-0fd895d3462f037b4"
   ]
 }
-
-
-include {
-  path = find_in_parent_folders()
-}
