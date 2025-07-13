@@ -23,6 +23,7 @@ on:
 jobs:
   terragrunt:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout selected branch
         uses: actions/checkout@v4
@@ -39,16 +40,33 @@ jobs:
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.6  # Use the version that matches your Terragrunt setup
+          terraform_version: 1.6.6
 
       - name: Install Terragrunt
         run: |
-          wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.56.3/terragrunt_linux_amd64
+          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v0.56.3/terragrunt_linux_amd64
           chmod +x terragrunt_linux_amd64
           sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
+          terragrunt --version
+
+      - name: Initialize Terragrunt
+        run: |
+          cd live/${{ github.event.inputs.environment }}
+          terragrunt init
+
+      - name: Import IAM Instance Profile if not in state
+        run: |
+          cd live/${{ github.event.inputs.environment }}
+          if ! terragrunt state list | grep -q "aws_iam_instance_profile.ec2_profile"; then
+            echo "Importing existing IAM Instance Profile..."
+            terragrunt import aws_iam_instance_profile.ec2_profile ec2-cloudwatch-ssm-profile
+          else
+            echo "IAM Instance Profile already in state. Skipping import."
+          fi
 
       - name: Terragrunt Plan/Apply
         run: |
+          set -e
           cd live/${{ github.event.inputs.environment }}
           if [ "${{ github.event.inputs.action }}" = "plan" ]; then
             terragrunt plan --terragrunt-non-interactive
