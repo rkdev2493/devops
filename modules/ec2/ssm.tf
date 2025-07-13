@@ -5,10 +5,10 @@ resource "aws_ssm_association" "cloudwatch_agent" {
     values = [aws_instance.ec2_instance.id]
   }
   parameters = {
-    action = ["Install"]
-    mode   = ["ec2"]
-    optionalConfigurationSource = ["ssm"]
-    optionalConfigurationLocation = [aws_ssm_parameter.cloudwatch_agent_config.name]
-    optionalRestart = ["yes"]
+    action = "Install"
+    mode   = "ec2"
+    optionalConfigurationSource = "ssm"
+    optionalConfigurationLocation = aws_ssm_parameter.cloudwatch_agent_config.name
+    optionalRestart = "yes"
   }
 }
